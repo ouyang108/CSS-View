@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { onMessage } from 'webext-bridge/content-script'
-import { local_CONFIG } from '@/constants'
+import { default_CONFIG, local_CONFIG } from '@/constants'
+
 import CssAttribute from './components/cssAttribute.vue'
 
 let onMessageOff: () => void = () => {}
@@ -15,6 +16,7 @@ const highlightLayerStyle = ref({
   borderStyle: '',
   keyConfig: '',
 })
+const cssList = ref<Record<string, string>[]>([])
 // 上一个悬停的元素（避免重复处理同一元素）
 let lastTarget: HTMLElement | null = null
 // 缓存元素位置，避免重复计算
@@ -24,7 +26,10 @@ const highlightLayer = useTemplateRef<HTMLDivElement>('highlightLayer')
 let mutationObserver: MutationObserver | null = null
 // 标记是否正在更新样式，避免重复执行
 let isUpdating = false
-
+// 当前target
+let currentTarget: HTMLElement | null = null
+// 记录上一次的target
+let lastTargetCss: HTMLElement | null = null
 // 是否处于显示状态
 const isVisible = ref(false)
 // 核心：计算并更新高亮层位置（抽离为独立函数）
@@ -87,7 +92,7 @@ function updateHighlight(e: MouseEvent) {
   lastTarget = target
   // 立即更新位置
   updateLayerPosition(target)
-
+  currentTarget = target
   // 优化 MutationObserver：只监听必要的变化，降低性能消耗
   mutationObserver = new MutationObserver(() => {
     if (lastTarget) {
@@ -139,6 +144,7 @@ onUnmounted(() => {
   }
 
   // 重置状态
+  currentTarget = null
   lastTarget = null
   lastRect = null
   highlightLayerStyle.value.display = 'none'
@@ -154,13 +160,74 @@ function getMessage() {
     }
   })
 }
+// 获取目标的所有css属性
+/**
+ * 获取元素的计算样式（仅查询全部属性时过滤默认值）
+ * @param propNames - 可选，指定要获取的CSS属性名数组，不传则获取所有非默认属性
+ * @returns 包含计算样式的对象数组
+ */
+function getAllComputedStyles(propNames?: string[]) {
+  // 校验目标元素有效性
+  if (!currentTarget || !(currentTarget instanceof HTMLElement)) {
+    console.error('传入的不是有效的DOM元素')
+    return [] // 统一返回数组，保持结构一致
+  }
+  // 如果是同一个元素，直接返回缓存的结果
+  if (currentTarget === lastTargetCss)
+    return cssList.value
+  // 获取目标元素的计算样式
+  const computedStyle = window.getComputedStyle(currentTarget)
+  const result: Record<string, string>[] = []
+
+  if (propNames && propNames.length > 0) {
+    // 传入propNames时：按原逻辑执行，不过滤默认值，逐个创建单属性对象
+    propNames.forEach((prop: string) => {
+      const value = computedStyle.getPropertyValue(prop)
+      // 每个属性创建独立对象，推入结果数组
+      result.push({ [prop]: value })
+    })
+  }
+  else {
+    // 未传入propNames（查全部）：过滤默认值，逐个创建单属性对象
+    // 创建同类型空元素获取浏览器默认样式
+    const tempElement = document.createElement(currentTarget.tagName)
+    tempElement.style.position = 'absolute'
+    tempElement.style.visibility = 'hidden'
+    tempElement.style.pointerEvents = 'none'
+    document.body.appendChild(tempElement)
+    const defaultStyle = window.getComputedStyle(tempElement)
+
+    // 遍历所有CSS属性，仅保留非默认值，逐个创建单属性对象
+    for (let i = 0; i < computedStyle.length; i++) {
+      const prop = computedStyle[i]
+      const computedValue = computedStyle.getPropertyValue(prop)
+      const defaultValue = defaultStyle.getPropertyValue(prop)
+
+      // 过滤默认值，且值不为空时创建单属性对象
+      if (computedValue !== defaultValue && computedValue) {
+        result.push({ [prop]: computedValue })
+      }
+    }
+
+    // 清理临时元素
+    document.body.removeChild(tempElement)
+  }
+  lastTargetCss = currentTarget
+  return result
+}
+
 // 监听键盘按下事件
 function keydownListener(e: KeyboardEvent) {
   // 如果没有选中某个元素不执行
+
   if (highlightLayerStyle.value.display === 'none')
     return
   if (e.key === highlightLayerStyle.value.keyConfig) {
     isVisible.value = !isVisible.value
+  }
+  if (isVisible.value) {
+    cssList.value = getAllComputedStyles()
+    console.log(cssList.value)
   }
 }
 onMounted(async () => {
@@ -173,8 +240,13 @@ onMounted(async () => {
       ...JSON.parse(config),
     }
   }
+  else {
+    highlightLayerStyle.value = {
+      ...highlightLayerStyle.value,
+      ...default_CONFIG,
+    }
+  }
   getMessage()
-  // 监听键盘按下事件
 })
 onBeforeUnmount(() => {
   if (typeof onMessageOff === 'function') {
@@ -182,6 +254,8 @@ onBeforeUnmount(() => {
   }
   // 移除键盘按下事件监听
   window.removeEventListener('keydown', keydownListener)
+  // 清除 缓存的css列表
+  cssList.value = []
 })
 </script>
 
