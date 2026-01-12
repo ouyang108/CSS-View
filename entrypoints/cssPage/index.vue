@@ -16,7 +16,7 @@ const highlightLayerStyle = ref({
   borderStyle: '',
   keyConfig: '',
 })
-const cssList = ref<Record<string, string>[]>([])
+const cssList = ref<{ label: string, value: string }[]>([])
 // 上一个悬停的元素（避免重复处理同一元素）
 let lastTarget: HTMLElement | null = null
 // 缓存元素位置，避免重复计算
@@ -166,7 +166,7 @@ function getMessage() {
  * @param propNames - 可选，指定要获取的CSS属性名数组，不传则获取所有非默认属性
  * @returns 包含计算样式的对象数组
  */
-function getAllComputedStyles(propNames?: string[]) {
+function getAllComputedStyles(propNames?: string[]): { label: string, value: string }[] {
   // 校验目标元素有效性
   if (!currentTarget || !(currentTarget instanceof HTMLElement)) {
     console.error('传入的不是有效的DOM元素')
@@ -177,14 +177,14 @@ function getAllComputedStyles(propNames?: string[]) {
     return cssList.value
   // 获取目标元素的计算样式
   const computedStyle = window.getComputedStyle(currentTarget)
-  const result: Record<string, string>[] = []
+  const result: { label: string, value: string }[] = []
 
   if (propNames && propNames.length > 0) {
     // 传入propNames时：按原逻辑执行，不过滤默认值，逐个创建单属性对象
     propNames.forEach((prop: string) => {
       const value = computedStyle.getPropertyValue(prop)
       // 每个属性创建独立对象，推入结果数组
-      result.push({ [prop]: value })
+      result.push({ label: prop, value })
     })
   }
   else {
@@ -205,7 +205,7 @@ function getAllComputedStyles(propNames?: string[]) {
 
       // 过滤默认值，且值不为空时创建单属性对象
       if (computedValue !== defaultValue && computedValue) {
-        result.push({ [prop]: computedValue })
+        result.push({ label: prop, value: computedValue })
       }
     }
 
@@ -261,7 +261,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="highlightLayer" class="css-inspect" :style="highlightLayerStyle">
-    <CssAttribute :style="{ display: isVisible ? 'block' : 'none' }" />
+    <CssAttribute :style="{ display: isVisible ? 'block' : 'none' }" :css-list="cssList" />
   </div>
 </template>
 

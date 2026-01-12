@@ -6,28 +6,16 @@ defineProps({
     type: String,
     default: '',
   },
+  cssList: {
+    type: Array as PropType<{ label: string, value: string }[]>,
+    default: () => [],
+  },
 })
 const cssAttribute = useTemplateRef('cssAttribute')
-const commonProps = [
-  'width',
-  'height',
-  'background-color',
-  'color',
-  'padding',
-  'margin',
-  'border',
-  'border-radius',
-  'font-size',
-  'font-weight',
-  'line-height',
-  'display',
-  'position',
-  'box-shadow',
-  'overflow',
-]
-async function copyValue(value: string) {
+
+async function copyValue(value: { label: string, value: string }) {
   // 如果是http ip地址的。不允许使用
-  const copyValue = handleCopyFormat(value, value)
+  const copyValue = handleCopyFormat(value.label, value.value)
   if (navigator.clipboard) {
     await navigator.clipboard.writeText(copyValue)
   }
@@ -81,9 +69,9 @@ onMounted(() => {
   <div ref="cssAttribute" class="css-attribute">
     <div id="css-panel" class="css-panel">
       <ul id="css-props-list" class="css-props-list">
-        <li v-for="value in commonProps" :key="value" class="css-prop-item" @click="copyValue(value)">
-          <span class="css-prop-name">{{ value }}</span>
-          <span class="css-prop-value">{{ value }}</span>
+        <li v-for="value in cssList" :key="value.label" class="css-prop-item" @click="copyValue(value)">
+          <span class="css-prop-name">{{ value.label }}</span>
+          <span class="css-prop-value">{{ value.value }}</span>
         </li>
       </ul>
     </div>
