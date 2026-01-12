@@ -79,3 +79,19 @@
         .css-panel::-webkit-scrollbar-thumb:hover {
             background: #999;
         }
+               /* 搜索框样式 */
+        .css-panel-search {
+            margin-bottom: 8px;
+            padding: 4px 6px;
+            border: 1px solid #e0e0e0;
+            border-radius: 2px;
+            font-size: 11px;
+            width: 90%;
+            outline: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        .css-panel-search:focus {
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }

@@ -2,8 +2,9 @@
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { onMessage } from 'webext-bridge/content-script'
 import { default_CONFIG, local_CONFIG } from '@/constants'
-
 import CssAttribute from './components/cssAttribute.vue'
+
+import Dialog from './components/dialog.vue'
 
 let onMessageOff: () => void = () => {}
 const highlightLayerStyle = ref({
@@ -32,6 +33,9 @@ let currentTarget: HTMLElement | null = null
 let lastTargetCss: HTMLElement | null = null
 // 是否处于显示状态
 const isVisible = ref(false)
+const dialog = ref(false)
+const message = ref('')
+
 // 核心：计算并更新高亮层位置（抽离为独立函数）
 function updateLayerPosition(target: HTMLElement) {
   if (isUpdating || !highlightLayer.value)
@@ -167,16 +171,11 @@ function getMessage() {
  * @returns 包含计算样式的对象数组
  */
 function getAllComputedStyles(propNames?: string[]): { label: string, value: string }[] {
-  // 校验目标元素有效性
-  if (!currentTarget || !(currentTarget instanceof HTMLElement)) {
-    console.error('传入的不是有效的DOM元素')
-    return [] // 统一返回数组，保持结构一致
-  }
   // 如果是同一个元素，直接返回缓存的结果
   if (currentTarget === lastTargetCss)
     return cssList.value
   // 获取目标元素的计算样式
-  const computedStyle = window.getComputedStyle(currentTarget)
+  const computedStyle = window.getComputedStyle(currentTarget!)
   const result: { label: string, value: string }[] = []
 
   if (propNames && propNames.length > 0) {
@@ -190,7 +189,7 @@ function getAllComputedStyles(propNames?: string[]): { label: string, value: str
   else {
     // 未传入propNames（查全部）：过滤默认值，逐个创建单属性对象
     // 创建同类型空元素获取浏览器默认样式
-    const tempElement = document.createElement(currentTarget.tagName)
+    const tempElement = document.createElement(currentTarget!.tagName)
     tempElement.style.position = 'absolute'
     tempElement.style.visibility = 'hidden'
     tempElement.style.pointerEvents = 'none'
@@ -222,12 +221,24 @@ function keydownListener(e: KeyboardEvent) {
 
   if (highlightLayerStyle.value.display === 'none')
     return
+    // 校验目标元素有效性
+  if (!currentTarget || !(currentTarget instanceof HTMLElement)) {
+    // console.error('传入的不是有效的DOM元素')
+    dialog.value = true
+    message.value = '传入的不是有效的DOM元素'
+    setTimeout(() => {
+      dialog.value = false
+    }, 1000)
+    return
+  }
+  // TODO:需要修改这个逻辑
+  // 当按下的键是配置的键时，切换显示状态
   if (e.key === highlightLayerStyle.value.keyConfig) {
     isVisible.value = !isVisible.value
   }
   if (isVisible.value) {
     cssList.value = getAllComputedStyles()
-    console.log(cssList.value)
+    // console.log(cssList.value)
   }
 }
 onMounted(async () => {
@@ -261,11 +272,15 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="highlightLayer" class="css-inspect" :style="highlightLayerStyle">
-    <CssAttribute :style="{ display: isVisible ? 'block' : 'none' }" :css-list="cssList" />
+    <CssAttribute v-model="cssList" :style="{ display: isVisible ? 'block' : 'none' }" />
+    <Dialog :dialog="dialog" :message="message" />
   </div>
 </template>
 
 <style scoped>
+  * {
+    box-sizing: border-box;
+  }
 .css-inspect {
   position: fixed; /* 关键：fixed 定位基于视口，无需加滚动偏移 */
   pointer-events: none;
