@@ -16,6 +16,7 @@ const highlightLayerStyle = ref({
   borderColor: '',
   borderStyle: '',
   keyConfig: '',
+  cssProps: [] as string[],
 })
 const cssList = ref<{ label: string, value: string }[]>([])
 // 上一个悬停的元素（避免重复处理同一元素）
@@ -237,7 +238,9 @@ function keydownListener(e: KeyboardEvent) {
     isVisible.value = !isVisible.value
   }
   if (isVisible.value) {
-    cssList.value = getAllComputedStyles()
+    console.log(highlightLayerStyle, 'highlightLayerStyle')
+    const { cssProps = [] } = highlightLayerStyle.value
+    cssList.value = getAllComputedStyles(cssProps)
     // console.log(cssList.value)
   }
 }
