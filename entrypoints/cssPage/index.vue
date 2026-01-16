@@ -283,7 +283,10 @@ onBeforeUnmount(() => {
 <style scoped>
   * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
+
 .css-inspect {
   position: fixed; /* 关键：fixed 定位基于视口，无需加滚动偏移 */
   pointer-events: none;
@@ -298,5 +301,6 @@ onBeforeUnmount(() => {
   backface-visibility: hidden;
   /* 去掉过渡动画，避免延迟感 */
   transition: none;
+
 }
 </style>

@@ -102,13 +102,7 @@ watch(
   <div ref="cssAttribute" class="css-attribute">
     <div id="css-panel" class="css-panel">
       <!-- 搜索框 -->
-      <input
-        id="css-search-input"
-        type="text"
-        class="css-panel-search"
-        placeholder="搜索 CSS 属性..."
-        @input="filterProps"
-      >
+      <input id="css-search-input" type="text" class="css-panel-search" placeholder="搜索 CSS 属性..." @input="filterProps">
       <ul id="css-props-list" class="css-props-list">
         <li v-for="value in originalCssList" :key="value.label" class="css-prop-item" @click="copyValue(value)">
           <span class="css-prop-name">{{ value.label }}</span>
@@ -120,14 +114,20 @@ watch(
   </div>
 </template>
 
-<style  scoped>
-    @import './index.css';
-    .css-attribute {
-        position: absolute;
-        width: 80px;
-        z-index: 999;
-        left: 50%;
-        transform: translateX(-50%);
-        pointer-events: auto;
-    }
+<style scoped>
+@import './index.css';
+
+.css-attribute {
+  position: absolute;
+  width: 80px;
+  z-index: 999;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+
+  ul {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
 </style>
