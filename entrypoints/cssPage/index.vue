@@ -2,8 +2,8 @@
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { onMessage } from 'webext-bridge/content-script'
 import { default_CONFIG, local_CONFIG } from '@/constants'
+import { cssDeepInspector } from '@/utils/css'
 import CssAttribute from './components/cssAttribute.vue'
-
 import Dialog from './components/dialog.vue'
 
 let onMessageOff: () => void = () => {}
@@ -173,6 +173,7 @@ function getMessage() {
  */
 function getAllComputedStyles(propNames?: string[]): { label: string, value: string }[] {
   // 如果是同一个元素，直接返回缓存的结果
+
   if (currentTarget === lastTargetCss)
     return cssList.value
   // 获取目标元素的计算样式
@@ -180,6 +181,7 @@ function getAllComputedStyles(propNames?: string[]): { label: string, value: str
   const result: { label: string, value: string }[] = []
 
   if (propNames && propNames.length > 0) {
+    console.log(cssDeepInspector.inspect(currentTarget!, propNames))
     // 传入propNames时：按原逻辑执行，不过滤默认值，逐个创建单属性对象
     propNames.forEach((prop: string) => {
       const value = computedStyle.getPropertyValue(prop)
