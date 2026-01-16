@@ -144,7 +144,8 @@ onMounted(async () => {
       <div class="config-item">
         <label class="config-label">要展示的CSS属性</label>
         <p class="config-desc">
-          自定义输入（用‘,’隔开）
+          自定义输入（用‘,’隔开，如果填写缩写，会展示缩写所有非默认属性 如：margin 会展示margin-left等；
+          如果填写margin-left和margin，margin-left不会展示）
         </p>
         <div class="css-props-wrapper">
           <div id="cssPropsContainer" class="css-props-container">

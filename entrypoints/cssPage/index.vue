@@ -181,13 +181,15 @@ function getAllComputedStyles(propNames?: string[]): { label: string, value: str
   const result: { label: string, value: string }[] = []
 
   if (propNames && propNames.length > 0) {
-    console.log(cssDeepInspector.inspect(currentTarget!, propNames))
+    // console.log(cssDeepInspector.inspect(currentTarget!, propNames))
+    const res = cssDeepInspector.extractStyles(currentTarget!, propNames)
+    result.push(...res)
     // 传入propNames时：按原逻辑执行，不过滤默认值，逐个创建单属性对象
-    propNames.forEach((prop: string) => {
-      const value = computedStyle.getPropertyValue(prop)
-      // 每个属性创建独立对象，推入结果数组
-      result.push({ label: prop, value })
-    })
+    // propNames.forEach((prop: string) => {
+    //   const value = computedStyle.getPropertyValue(prop)
+    //   // 每个属性创建独立对象，推入结果数组
+    //   result.push({ label: prop, value })
+    // })
   }
   else {
     // 未传入propNames（查全部）：过滤默认值，逐个创建单属性对象

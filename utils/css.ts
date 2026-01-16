@@ -1,50 +1,69 @@
 /**
- * 定义样式结果的结构
- * 如果是简写属性且无法直接获取，则为 Record<string, string>
+ * 格式化后的原子样式项
  */
-type StyleValue = string | Record<string, string>
-
-interface InspectResult {
-  property: string
-  normal: StyleValue
-  current: StyleValue
-  hasChanged: boolean
+interface FormattedResult {
+  label: string
+  value: string
 }
 
-/**
- * 高级 CSS 探测器
- */
 class CssDeepInspector {
+  // 静态缓存，所有实例共享，减少重复探测开销
+  private static shorthandCache: Map<string, string[]> = new Map()
   private tester: HTMLDivElement
 
   constructor() {
     this.tester = document.createElement('div')
+    this.tester.style.display = 'none'
+    document.body.appendChild(this.tester)
   }
 
   /**
-   * 判断是否为简写关系
+   * 极致优化：获取某个简写属性下的所有原子子属性
+   * 采用“一次探测，终身缓存”策略
+   * 建立一套“CSS 属性家谱”
    */
-  private isShorthand(parent: string, child: string): boolean {
-    if (parent === child)
-      return false
-    if (child.startsWith(`${parent}-`))
-      return true
+  private getSubProperties(shorthand: string): string[] {
+    if (CssDeepInspector.shorthandCache.has(shorthand)) {
+      return CssDeepInspector.shorthandCache.get(shorthand)!
+    }
 
+    // 探测逻辑：利用 inherit 特性找出受影响的子属性
     this.tester.style.cssText = '';
-    // 使用 any 绕过类型检查，因为我们需要动态探测任意属性
-    (this.tester.style as any)[parent] = 'inherit'
-    return (this.tester.style as any)[child] === 'inherit'
+    (this.tester.style as any)[shorthand] = 'inherit'
+
+    const computed = window.getComputedStyle(this.tester)
+    const subs: string[] = []
+
+    // 只在第一次探测时遍历全量属性（约 300-500 个）
+    for (let i = 0; i < computed.length; i++) {
+      const prop = computed[i]
+      if (prop !== shorthand && (this.tester.style as any)[prop] === 'inherit') {
+        subs.push(prop)
+      }
+    }
+
+    CssDeepInspector.shorthandCache.set(shorthand, subs)
+    return subs
   }
 
   /**
-   * 过滤输入：保留最高层级属性
+   * 内部方法：判断 A 是否包含 B
    */
-  public filterKeys(inputs: string[]): string[] {
+  private isShorthandOf(parent: string, child: string): boolean {
+    return this.getSubProperties(parent).includes(child)
+  }
+
+  /**
+   * 过滤输入：保留最高层级，并去重
+   * 过滤用户输入，处理 border 和 border-right 的竞争
+   * @param inputs 用户输入的属性数组
+   * @returns 过滤后的属性数组
+   */
+  private filterInputs(inputs: string[]): string[] {
     const unique = [...new Set(inputs)].sort((a, b) => a.length - b.length)
     const final: string[] = []
-
     for (const curr of unique) {
-      if (!final.some(prev => this.isShorthand(prev, curr))) {
+      if (!final.some(prev => this.isShorthandOf(prev, curr))) {
         final.push(curr)
       }
     }
@@ -52,108 +71,45 @@ class CssDeepInspector {
   }
 
   /**
-   * 获取属性的真实计算值 (处理简写属性展开)
+   * 极致提取：将用户输入的 border, border-right 等
+   * 全部转化为 [{label, value}] 格式，且不包含重复逻辑
+   * @param dom 要提取样式的 DOM 元素
+   * @param userInput 用户输入的属性数组
+   * @returns 格式化后的原子样式数组
    */
-  private getPropertyData(dom: HTMLElement, key: string): StyleValue {
+  public extractStyles(dom: HTMLElement, userInput: string[]): FormattedResult[] {
     const computed = window.getComputedStyle(dom)
-    const value = computed.getPropertyValue(key)
+    const keys = this.filterInputs(userInput)
+    const result: FormattedResult[] = []
 
-    // 针对 Chrome 无法直接获取 border 等简写值的处理
-    // 或者是默认的 0px none 状态进行 fallback 检查
-    const isInvalidShorthand = value === '' || value === null
-      || (key === 'border' && value.includes('0px none'))
+    for (const key of keys) {
+      const val = computed.getPropertyValue(key)
 
-    if (isInvalidShorthand) {
-      const subStyles: Record<string, string> = {}
-      // 遍历所有计算属性，寻找属于该简写属性的子属性
-      for (let i = 0; i < computed.length; i++) {
-        const prop = computed[i]
-        if (this.isShorthand(key, prop)) {
-          subStyles[prop] = computed.getPropertyValue(prop)
+      // 判断是否是需要展开的简写属性
+      // 逻辑：如果直接拿到的值是空的，或者是类似 "0px none rgb(0,0,0)" 的复合空值
+      const isShorthand = this.getSubProperties(key).length > 0
+      const isEmptyShorthand = !val || (key === 'border' && val.includes('0px none'))
+
+      if (isShorthand && isEmptyShorthand) {
+        // 极致展开：直接推入原子属性
+        const subs = this.getSubProperties(key)
+        for (const sub of subs) {
+          const subVal = computed.getPropertyValue(sub)
+          // 过滤掉无效值/空值（可选）
+          if (subVal && subVal !== 'initial' && subVal !== 'none') {
+            result.push({ label: sub, value: subVal })
+          }
         }
       }
-      return Object.keys(subStyles).length > 0 ? subStyles : value
-    }
-    return value
-  }
-
-  /**
-   * 获取“非 Hover”状态的基准样式 (克隆法)
-   */
-  private getNormalSnapshot(dom: HTMLElement, keys: string[]): Record<string, StyleValue> {
-    const clone = dom.cloneNode(true) as HTMLElement
-
-    // 样式屏蔽，防止克隆体影响页面布局
-    Object.assign(clone.style, {
-      position: 'fixed',
-      pointerEvents: 'none',
-      top: '-9999px',
-      visibility: 'hidden',
-    })
-
-    // 插入到相同父节点以确保上下文样式（如变量、继承）一致
-    if (dom.parentNode) {
-      dom.parentNode.appendChild(clone)
-    }
-    else {
-      document.body.appendChild(clone)
-    }
-
-    const snapshot: Record<string, StyleValue> = {}
-    keys.forEach((key) => {
-      snapshot[key] = this.getPropertyData(clone, key)
-    })
-
-    clone.remove()
-    return snapshot
-  }
-
-  /**
-   * 主执行函数：对比当前与原始状态
-   */
-  public inspect(dom: HTMLElement, userInput: string[]): InspectResult[] {
-    const keys = this.filterKeys(userInput)
-    const normalState = this.getNormalSnapshot(dom, keys)
-
-    return keys.map((key) => {
-      const current = this.getPropertyData(dom, key)
-      const normal = normalState[key]
-
-      // 使用 JSON.stringify 进行深度对比（处理 subStyles 对象）
-      const hasChanged = JSON.stringify(normal) !== JSON.stringify(current)
-
-      return {
-        property: key,
-        normal,
-        current,
-        hasChanged,
+      else if (val) {
+        // 普通属性或能直接取到值的简写属性
+        result.push({ label: key, value: val })
       }
-    })
+    }
+
+    return result
   }
 }
-const cssDeepInspector = new CssDeepInspector()
-export {
-  cssDeepInspector,
-}
 
-// // --- 使用示例 ---
-
-// const inspector = new CssDeepInspector()
-// const inputs = ['border', 'border-right', 'color', 'padding', 'transform']
-
-// document.body.addEventListener('mouseover', (e: MouseEvent) => {
-//   const target = e.target as HTMLElement
-//   if (!target || target === document.body)
-//     return
-
-//   const result: InspectResult[] = inspector.inspect(target, inputs)
-
-//   // 格式化输出
-//   console.clear()
-//   console.table(result.map(item => ({
-//     属性: item.property,
-//     原始状态: typeof item.normal === 'object' ? '{Object}' : item.normal,
-//     当前状态: typeof item.current === 'object' ? '{Object}' : item.current,
-//     Hover变化: item.hasChanged ? '✅ YES' : '❌ NO',
-//   })))
-// })
+// 导出单例
+export const cssDeepInspector = new CssDeepInspector()
