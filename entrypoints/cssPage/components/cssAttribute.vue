@@ -51,22 +51,22 @@ function handleCopyFormat(attribute: string, value: string) {
   return `${attribute}: ${value};\n`
 }
 // 监听dom元素是否交叉
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    console.log(entry.intersectionRatio)
-    if (entry.isIntersecting) {
-      console.log('元素进入视口')
-    }
-    else {
-      console.log('元素离开视口')
-    }
-  })
-}, {
+// const observer = new IntersectionObserver((entries) => {
+//   entries.forEach((entry) => {
+//     console.log(entry.intersectionRatio)
+//     if (entry.isIntersecting) {
+//       console.log('元素进入视口')
+//     }
+//     else {
+//       console.log('元素离开视口')
+//     }
+//   })
+// }, {
 
-  threshold: 1, // 元素100%进入root时触发
-  //   rootMargin: '10px', // 无额外边距，精准判断
+//   threshold: 1, // 元素100%进入root时触发
+//   //   rootMargin: '10px', // 无额外边距，精准判断
 
-})
+// })
 // 过滤属性列表
 const filterProps = debounce((e: InputEvent) => {
   if (!cssList.value.length)
@@ -83,11 +83,6 @@ const filterProps = debounce((e: InputEvent) => {
   )
   // 当内容为空，需要展示所有的
 }, 300)
-// 监听浏览器的resize事件
-onMounted(() => {
-  if (cssAttribute.value)
-    observer.observe(cssAttribute.value)
-})
 watch(
   cssList,
   (newList) => {
@@ -120,9 +115,8 @@ watch(
 .css-attribute {
   position: absolute;
   width: 80px;
-  z-index: 999;
-  left: 50%;
-  transform: translateX(-50%);
+  z-index: 9999;
+
   pointer-events: auto;
 
   ul {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { flip, offset, shift, useFloating } from '@floating-ui/vue'
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { onMessage } from 'webext-bridge/content-script'
 import { default_CONFIG, local_CONFIG } from '@/constants'
@@ -25,6 +26,7 @@ let lastTarget: HTMLElement | null = null
 // 缓存元素位置，避免重复计算
 let lastRect: DOMRect | null = null
 const highlightLayer = useTemplateRef<HTMLDivElement>('highlightLayer')
+const cssAttributeRef = useTemplateRef<HTMLDivElement>('cssAttributeRef')
 // 用于监听元素位置变化的 MutationObserver
 let mutationObserver: MutationObserver | null = null
 // 标记是否正在更新样式，避免重复执行
@@ -37,6 +39,20 @@ let lastTargetCss: HTMLElement | null = null
 const isVisible = ref(false)
 const dialog = ref(false)
 const message = ref('')
+
+// 2. 配置 Floating UI 核心逻辑
+const { floatingStyles } = useFloating(highlightLayer, cssAttributeRef, {
+  // 放置位置：底部居中
+  placement: 'bottom',
+  // 只要 isVisible 为 true 就开启自动更新（处理滚动和位移）
+  // whileElementsMounted: autoUpdate,
+  middleware: [
+    offset(), // 弹框与高亮框保持 10px 距离
+    flip(),
+    shift(),
+
+  ],
+})
 
 // 核心：计算并更新高亮层位置（抽离为独立函数）
 function updateLayerPosition(target: HTMLElement) {
@@ -283,7 +299,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="highlightLayer" class="css-inspect" :style="highlightLayerStyle">
-    <CssAttribute v-model="cssList" :style="{ display: isVisible ? 'block' : 'none' }" />
+    <CssAttribute v-if="isVisible" ref="cssAttributeRef" v-model="cssList" :style="floatingStyles" />
     <Dialog :dialog="dialog" :message="message" />
   </div>
 </template>

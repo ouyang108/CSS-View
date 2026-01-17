@@ -117,3 +117,95 @@ export const cssDeepInspector = new CssDeepInspector()
 export function setToPlus(set: Set<string>): string {
   return [...set].join('+')
 }
+
+/**
+ * 定义我们要观察的 CSS 属性类型
+ */
+// type WatchableProperty = keyof CSSStyleDeclaration & string
+
+// interface StyleChange {
+//   before: string
+//   after: string
+// }
+
+// interface ObserveResult {
+//   element: HTMLElement
+//   changes: Record<string, StyleChange>
+// }
+
+// const HoverFullObserver = (() => {
+//   let probe: HTMLElement | null = null
+
+//   // 视觉相关的属性清单
+//   const WATCH_PROPS: WatchableProperty[] = [
+//     'backgroundColor',
+//     'color',
+//     'borderColor',
+//     'opacity',
+//     'transform',
+//     'boxShadow',
+//     'borderRadius',
+//     'backgroundImage',
+//     'textDecoration',
+//     'outlineColor',
+//     'letterSpacing',
+//   ]
+
+//   function getProbe(): HTMLElement {
+//     if (!probe) {
+//       probe = document.createElement('div')
+//       probe.id = 'hover-ts-probe'
+//       // 使用 Object.assign 的类型安全写法
+//       Object.assign(probe.style, {
+//         position: 'fixed',
+//         visibility: 'hidden',
+//         pointerEvents: 'none',
+//         top: '-9999px',
+//         left: '-9999px',
+//         display: 'none',
+//       })
+//       document.body.appendChild(probe)
+//     }
+//     return probe
+//   }
+
+//   return function observe(target: HTMLElement): ObserveResult | null {
+//     // 基础检查
+//     if (!target || !(target instanceof HTMLElement))
+//       return null
+
+//     const p = getProbe()
+
+//     // 1. 同步环境状态
+//     // 复制 class 和 id 以及行内样式，以确保 CSS 选择器能在探测器上生效
+//     p.className = target.className
+//     p.id = target.id
+//     p.style.cssText = target.style.cssText
+//     p.style.display = 'block' // 激活以允许计算样式
+
+//     // 2. 获取快照
+//     // 探测器 p 不在鼠标下，因此返回 Normal 状态
+//     // 目标 target 在鼠标下，返回 Hover 状态
+//     const normalStyle = window.getComputedStyle(p)
+//     const hoverStyle = window.getComputedStyle(target)
+
+//     const diff: Record<string, StyleChange> = {}
+//     let hasChanged = false
+
+//     // 3. 类型安全的对比
+//     for (const prop of WATCH_PROPS) {
+//       const before = normalStyle[prop as any]
+//       const after = hoverStyle[prop as any]
+
+//       if (before !== after) {
+//         diff[prop] = { before, after }
+//         hasChanged = true
+//       }
+//     }
+
+//     // 4. 重置探测器状态，减少 DOM 树渲染开销
+//     p.style.display = 'none'
+
+//     return hasChanged ? { element: target, changes: diff } : null
+//   }
+// })()
