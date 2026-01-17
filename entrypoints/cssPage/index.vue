@@ -2,10 +2,11 @@
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { onMessage } from 'webext-bridge/content-script'
 import { default_CONFIG, local_CONFIG } from '@/constants'
-import { cssDeepInspector } from '@/utils/css'
+import { cssDeepInspector, setToPlus } from '@/utils/css'
 import CssAttribute from './components/cssAttribute.vue'
 import Dialog from './components/dialog.vue'
 
+const keyDown: Set<string> = new Set()
 let onMessageOff: () => void = () => {}
 const highlightLayerStyle = ref({
   left: '0px',
@@ -184,12 +185,6 @@ function getAllComputedStyles(propNames?: string[]): { label: string, value: str
     // console.log(cssDeepInspector.inspect(currentTarget!, propNames))
     const res = cssDeepInspector.extractStyles(currentTarget!, propNames)
     result.push(...res)
-    // 传入propNames时：按原逻辑执行，不过滤默认值，逐个创建单属性对象
-    // propNames.forEach((prop: string) => {
-    //   const value = computedStyle.getPropertyValue(prop)
-    //   // 每个属性创建独立对象，推入结果数组
-    //   result.push({ label: prop, value })
-    // })
   }
   else {
     // 未传入propNames（查全部）：过滤默认值，逐个创建单属性对象
@@ -236,20 +231,27 @@ function keydownListener(e: KeyboardEvent) {
     }, 1000)
     return
   }
+
   // TODO:需要修改这个逻辑
   // 当按下的键是配置的键时，切换显示状态
-  if (e.key === highlightLayerStyle.value.keyConfig) {
+  keyDown.add(e.key)
+
+  if (setToPlus(keyDown) === highlightLayerStyle.value.keyConfig) {
     isVisible.value = !isVisible.value
   }
   if (isVisible.value) {
-    console.log(highlightLayerStyle, 'highlightLayerStyle')
     const { cssProps = [] } = highlightLayerStyle.value
     cssList.value = getAllComputedStyles(cssProps)
     // console.log(cssList.value)
   }
 }
+// 键盘up
+function keyupListener() {
+  keyDown.clear()
+}
 onMounted(async () => {
   window.addEventListener('keydown', keydownListener)
+  window.addEventListener('keyup', keyupListener)
   const config: string | null = await storage.getItem(local_CONFIG)
 
   if (config) {
@@ -272,6 +274,8 @@ onBeforeUnmount(() => {
   }
   // 移除键盘按下事件监听
   window.removeEventListener('keydown', keydownListener)
+  // 移除键盘up事件监听
+  window.removeEventListener('keyup', keyupListener)
   // 清除 缓存的css列表
   cssList.value = []
 })

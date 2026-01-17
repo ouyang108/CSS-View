@@ -113,3 +113,7 @@ class CssDeepInspector {
 
 // 导出单例
 export const cssDeepInspector = new CssDeepInspector()
+// 将set转成+拼接字符串
+export function setToPlus(set: Set<string>): string {
+  return [...set].join('+')
+}

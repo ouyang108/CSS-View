@@ -9,7 +9,8 @@ const default_CSS_PROPS = [
   'font-size',
   'font-weight',
   'font-style',
-  'text-decoration',
+  'margin',
+  'padding',
 ]
 export const default_CONFIG = {
   borderColor: '#000000',
