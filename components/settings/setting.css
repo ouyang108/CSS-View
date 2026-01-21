@@ -267,3 +267,40 @@
         .add-prop-btn:hover {
             background-color: #3182ce;
         }
+      
+         .switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            appearance: none;
+            -webkit-appearance: none;
+            background-color: #e0e0e0;
+            border-radius: 13px;
+            outline: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 开关滑块样式 */
+        .switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background-color: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 开启状态样式 */
+        .switch:checked {
+            background-color: #2196F3; /* 蓝色主题，可自行修改 */
+        }
+
+        /* 开启状态下滑块位置 */
+        .switch:checked::after {
+            transform: translateX(24px);
+        }

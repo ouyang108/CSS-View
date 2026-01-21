@@ -19,6 +19,7 @@ const highlightLayerStyle = ref({
   borderStyle: '',
   keyConfig: '',
   cssProps: [] as string[],
+  isEnabled: true,
 })
 const cssList = ref<{ label: string, value: string }[]>([])
 // 上一个悬停的元素（避免重复处理同一元素）
@@ -88,7 +89,10 @@ function updateLayerPosition(target: HTMLElement) {
 
 // 监听鼠标移动事件（无防抖，实时响应）
 function updateHighlight(e: MouseEvent) {
+  if (!highlightLayerStyle.value.isEnabled)
+    return
   // 如果属性是显示，不更新位置
+
   if (isVisible.value)
     return
 
@@ -233,6 +237,9 @@ function getAllComputedStyles(propNames?: string[]): { label: string, value: str
 
 // 监听键盘按下事件
 function keydownListener(e: KeyboardEvent) {
+  // 如果不启用功能，不执行
+  if (!highlightLayerStyle.value.isEnabled)
+    return
   // 如果没有选中某个元素不执行
 
   if (highlightLayerStyle.value.display === 'none')
@@ -248,7 +255,6 @@ function keydownListener(e: KeyboardEvent) {
     return
   }
 
-  // TODO:需要修改这个逻辑
   // 当按下的键是配置的键时，切换显示状态
   keyDown.add(e.key)
 

@@ -118,6 +118,10 @@ onMounted(async () => {
     </div>
 
     <div class="config-section">
+      <div class="config-item">
+        <label class="config-label">开启功能</label>
+        <input id="mySwitch" v-model="previewData.isEnabled" type="checkbox" class="switch">
+      </div>
       <!-- 边框颜色配置 -->
       <div class="config-item">
         <label class="config-label">边框颜色</label>

@@ -18,4 +18,5 @@ export const default_CONFIG = {
   // Ctrl+Shift
   keyConfig: 'Control',
   cssProps: default_CSS_PROPS,
+  isEnabled: true,
 }
