@@ -4,9 +4,9 @@ import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { onMessage } from 'webext-bridge/content-script'
 import { default_CONFIG, local_CONFIG } from '@/constants'
 import { cssDeepInspector, setToPlus } from '@/utils/css'
+import { notify } from '@/utils/index'
 // import { notify } from '@/utils/index'
 import CssAttribute from './components/cssAttribute.vue'
-import Dialog from './components/dialog.vue'
 
 const keyDown: Set<string> = new Set()
 let onMessageOff: () => void = () => {}
@@ -334,18 +334,18 @@ watch(() => highlightLayerStyle.value.isEnabled, (newVal) => {
     closeCssAttributeAndHighlightLayer()
   }
 })
-// watch(() => dialog.value, (newVal) => {
-//   if (newVal) {
-//     notify(message.value)
-//   }
-// })
+watch(() => dialog.value, (newVal) => {
+  if (newVal) {
+    notify(message.value)
+  }
+})
 </script>
 
 <template>
   <div ref="highlightLayer" class="css-inspect" :style="highlightLayerStyle">
     <CssAttribute v-if="isVisible" ref="cssAttributeRef" v-model="cssList" :style="floatingStyles" />
   </div>
-  <Dialog :dialog="dialog" :message="message" />
+  <!-- <Dialog :dialog="dialog" :message="message" /> -->
 </template>
 
 <style scoped>

@@ -1,5 +1,6 @@
 import type { ToastOptions } from 'vue3-toastify'
 import { toast } from 'vue3-toastify'
+import 'vue3-toastify/dist/index.css'
 
 export function debounce<T extends (..._args: any[]) => any>(fn: T, delay: number) {
   let timer: number | null = null
