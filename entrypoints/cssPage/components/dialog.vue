@@ -28,6 +28,10 @@ defineProps({
         border-radius: 5px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         /* 不允许换行 */
+
+        border-radius: 10px;
+        font-size: 20px;
+
         white-space: nowrap;
     }
 </style>

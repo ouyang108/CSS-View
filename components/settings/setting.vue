@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { ToastOptions } from 'vue3-toastify'
 import { storage } from '#imports'
-import { toast } from 'vue3-toastify'
 import { sendMessage } from 'webext-bridge/popup'
+
 import { default_CONFIG, local_CONFIG } from '@/constants'
 import { useReset } from '@/hooks/useReset'
+import { notify } from '@/utils/index'
 
 // 实时预览数据
 const { state: previewData, reset } = useReset(default_CONFIG)
@@ -42,12 +42,7 @@ function saveConfig() {
   notify()
   sendConfig()
 }
-function notify() {
-  toast('保存成功', {
-    autoClose: 1000,
-    position: toast.POSITION.TOP_CENTER,
-  } as ToastOptions)
-}
+
 // 监听键盘事件
 function keydownListener() {
   const keyupEvent = (e: KeyboardEvent) => {

@@ -1,3 +1,6 @@
+import type { ToastOptions } from 'vue3-toastify'
+import { toast } from 'vue3-toastify'
+
 export function debounce<T extends (..._args: any[]) => any>(fn: T, delay: number) {
   let timer: number | null = null
   return (...args: any[]) => {
@@ -11,3 +14,9 @@ export function debounce<T extends (..._args: any[]) => any>(fn: T, delay: numbe
 }
 // 判断是否是 mac 系统
 // export const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
+export function notify(message = '保存成功') {
+  toast(message, {
+    autoClose: 1000,
+    position: toast.POSITION.TOP_CENTER,
+  } as ToastOptions)
+}

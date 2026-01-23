@@ -4,6 +4,7 @@ import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
 import { onMessage } from 'webext-bridge/content-script'
 import { default_CONFIG, local_CONFIG } from '@/constants'
 import { cssDeepInspector, setToPlus } from '@/utils/css'
+// import { notify } from '@/utils/index'
 import CssAttribute from './components/cssAttribute.vue'
 import Dialog from './components/dialog.vue'
 
@@ -89,7 +90,7 @@ function updateLayerPosition(target: HTMLElement) {
 
 // 监听鼠标移动事件（无防抖，实时响应）
 function updateHighlight(e: MouseEvent) {
-  if (!highlightLayerStyle.value.isEnabled)
+  if (!isEnabled())
     return
   // 如果属性是显示，不更新位置
 
@@ -175,6 +176,11 @@ onUnmounted(() => {
   lastRect = null
   highlightLayerStyle.value.display = 'none'
 })
+// 关闭css属性展示框和高亮层
+function closeCssAttributeAndHighlightLayer() {
+  isVisible.value = false
+  highlightLayerStyle.value.display = 'none'
+}
 // 接收消息
 function getMessage() {
   onMessageOff = onMessage<any>('config', async (data) => {
@@ -234,11 +240,38 @@ function getAllComputedStyles(propNames?: string[]): { label: string, value: str
   lastTargetCss = currentTarget
   return result
 }
-
+// 不启用功能。不执行
+function isEnabled() {
+  return highlightLayerStyle.value.isEnabled
+}
+// 关闭dialog
+function closeDialog() {
+  setTimeout(() => {
+    dialog.value = false
+  }, 1000)
+}
+// 监听按键开启和关闭功能，快捷点
+function onkeydownF1(e: KeyboardEvent) {
+  // 如果按下的是F1键
+  if (e.key === 'F4') {
+    // 启用
+    highlightLayerStyle.value.isEnabled = !highlightLayerStyle.value.isEnabled
+    const isEnabled = highlightLayerStyle.value.isEnabled
+    if (isEnabled) {
+      message.value = '已启用'
+    }
+    else {
+      message.value = '已禁用'
+    }
+    dialog.value = true
+    closeDialog()
+  }
+}
 // 监听键盘按下事件
 function keydownListener(e: KeyboardEvent) {
+  onkeydownF1(e)
   // 如果不启用功能，不执行
-  if (!highlightLayerStyle.value.isEnabled)
+  if (!isEnabled())
     return
   // 如果没有选中某个元素不执行
 
@@ -249,15 +282,12 @@ function keydownListener(e: KeyboardEvent) {
     // console.error('传入的不是有效的DOM元素')
     dialog.value = true
     message.value = '传入的不是有效的DOM元素'
-    setTimeout(() => {
-      dialog.value = false
-    }, 1000)
+    closeDialog()
     return
   }
 
-  // 当按下的键是配置的键时，切换显示状态
   keyDown.add(e.key)
-
+  // 当按下的键是配置的键时，切换显示状态
   if (setToPlus(keyDown) === highlightLayerStyle.value.keyConfig) {
     isVisible.value = !isVisible.value
   }
@@ -301,13 +331,24 @@ onBeforeUnmount(() => {
   // 清除 缓存的css列表
   cssList.value = []
 })
+// 监听isEnabled变化
+watch(() => highlightLayerStyle.value.isEnabled, (newVal) => {
+  if (!newVal) {
+    closeCssAttributeAndHighlightLayer()
+  }
+})
+// watch(() => dialog.value, (newVal) => {
+//   if (newVal) {
+//     notify(message.value)
+//   }
+// })
 </script>
 
 <template>
   <div ref="highlightLayer" class="css-inspect" :style="highlightLayerStyle">
     <CssAttribute v-if="isVisible" ref="cssAttributeRef" v-model="cssList" :style="floatingStyles" />
-    <Dialog :dialog="dialog" :message="message" />
   </div>
+  <Dialog :dialog="dialog" :message="message" />
 </template>
 
 <style scoped>
