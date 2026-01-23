@@ -253,16 +253,13 @@ function closeDialog() {
 // 监听按键开启和关闭功能，快捷点
 function onkeydownF1(e: KeyboardEvent) {
   // 如果按下的是F1键
+  // TODO:通知popup切换状态
   if (e.key === 'F4') {
     // 启用
     highlightLayerStyle.value.isEnabled = !highlightLayerStyle.value.isEnabled
     const isEnabled = highlightLayerStyle.value.isEnabled
-    if (isEnabled) {
-      message.value = '已启用'
-    }
-    else {
-      message.value = '已禁用'
-    }
+
+    message.value = isEnabled ? '已启用' : '已禁用'
     dialog.value = true
     closeDialog()
   }
