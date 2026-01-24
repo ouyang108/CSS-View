@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storage } from '#imports'
-import { sendMessage } from 'webext-bridge/popup'
+import { onMessage, sendMessage } from 'webext-bridge/popup'
 
 import { default_CONFIG, local_CONFIG } from '@/constants'
 import { useReset } from '@/hooks/useReset'
@@ -9,7 +9,7 @@ import { notify } from '@/utils/index'
 // 实时预览数据
 const { state: previewData, reset } = useReset(default_CONFIG)
 const inputContent = ref('')
-
+let onMessageOff: any
 // 键盘事件的取消函数
 let keyupEventCancle: any
 // 是否已经绑定过
@@ -94,8 +94,20 @@ function addProp() {
   previewData.cssProps = [...new Set(previewData.cssProps)]
   inputContent.value = ''
 }
+// 接收消息
+/**
+ * 由于popup
+ * 点击打开时才是一个活着的“进程”；一旦关掉或没打开，它在内存中就完全消失了
+ * 所以通过缓存来存储最新的状态
+ */
+function getMessage() {
+  onMessageOff = onMessage<any>('switchStatus', async (data) => {
+    previewData.isEnabled = data?.data?.isEnabled
+  })
+}
 onMounted(async () => {
   const config: string | null = await storage.getItem(local_CONFIG)
+
   if (config) {
     for (const key in previewData) {
       if (key in previewData) {
@@ -103,6 +115,11 @@ onMounted(async () => {
       }
     }
   }
+  getMessage()
+})
+onUnmounted(() => {
+  if (onMessageOff)
+    onMessageOff()
 })
 </script>
 

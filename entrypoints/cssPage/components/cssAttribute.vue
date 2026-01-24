@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
-import { debounce } from '@/utils'
-import Dialog from './dialog.vue'
+import { debounce, notify } from '@/utils'
 
 defineProps({
   attribute: {
@@ -16,7 +15,7 @@ const cssList = defineModel<{ label: string, value: string }[]>({
 })
 const originalCssList = ref<{ label: string, value: string }[]>([])
 const cssAttribute = useTemplateRef('cssAttribute')
-const dialog = ref(false)
+
 async function copyValue(value: { label: string, value: string }) {
   // 如果是http ip地址的。不允许使用
   const copyValue = handleCopyFormat(value.label, value.value)
@@ -26,9 +25,9 @@ async function copyValue(value: { label: string, value: string }) {
   else {
     copyValueTraditional(copyValue)
   }
-  dialog.value = true
+
   setTimeout(() => {
-    dialog.value = false
+    notify('复制成功')
   }, 1000)
 }
 // 传统复制方法
@@ -105,7 +104,6 @@ watch(
         </li>
       </ul>
     </div>
-    <Dialog :dialog />
   </div>
 </template>
 

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { flip, offset, shift, useFloating } from '@floating-ui/vue'
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
-import { onMessage } from 'webext-bridge/content-script'
+import { onMessage, sendMessage } from 'webext-bridge/content-script'
+
 import { default_CONFIG, local_CONFIG } from '@/constants'
 import { cssDeepInspector, setToPlus } from '@/utils/css'
 import { notify } from '@/utils/index'
@@ -328,6 +329,12 @@ onBeforeUnmount(() => {
   // 清除 缓存的css列表
   cssList.value = []
 })
+// 通知popup页面切换状态
+async function notifyPopupSwitchStatus() {
+  await sendMessage('switchStatus', {
+    isEnabled: highlightLayerStyle.value.isEnabled,
+  })
+}
 // 监听isEnabled变化
 watch(() => highlightLayerStyle.value.isEnabled, (newVal) => {
   if (!newVal) {
@@ -337,6 +344,10 @@ watch(() => highlightLayerStyle.value.isEnabled, (newVal) => {
 watch(() => dialog.value, (newVal) => {
   if (newVal) {
     notify(message.value)
+    // 如果popup页面也打开了，也需要通知它切换状态
+    notifyPopupSwitchStatus()
+    // 没有打开popup页面，也需要更新缓存的状态
+    storage.setItem(local_CONFIG, JSON.stringify(highlightLayerStyle.value))
   }
 })
 </script>
@@ -345,7 +356,6 @@ watch(() => dialog.value, (newVal) => {
   <div ref="highlightLayer" class="css-inspect" :style="highlightLayerStyle">
     <CssAttribute v-if="isVisible" ref="cssAttributeRef" v-model="cssList" :style="floatingStyles" />
   </div>
-  <!-- <Dialog :dialog="dialog" :message="message" /> -->
 </template>
 
 <style scoped>
