@@ -16,7 +16,7 @@ web-ext.config.ts
 .history
 .history/*
 # Editor directories and files
-
+.vscode/launch.json
 .idea
 .DS_Store
 *.suo

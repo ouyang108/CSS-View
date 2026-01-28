@@ -42,7 +42,8 @@ let lastTargetCss: HTMLElement | null = null
 const isVisible = ref(false)
 const dialog = ref(false)
 const message = ref('')
-
+let animationId: number | null = null
+// let upDateing = false
 // 2. 配置 Floating UI 核心逻辑
 const { floatingStyles } = useFloating(highlightLayer, cssAttributeRef, {
   // 放置位置：底部居中
@@ -61,9 +62,13 @@ const { floatingStyles } = useFloating(highlightLayer, cssAttributeRef, {
 function updateLayerPosition(target: HTMLElement) {
   if (isUpdating || !highlightLayer.value)
     return
-
+  // 如果上次已经有了，先取消上次的
+  if (animationId) {
+    cancelAnimationFrame(animationId)
+    animationId = null
+  }
   // 用 requestAnimationFrame 保证样式更新在浏览器重绘周期执行，更丝滑
-  requestAnimationFrame(() => {
+  animationId = requestAnimationFrame(() => {
     try {
       const rect = target.getBoundingClientRect()
       // 缓存rect，避免重复获取
@@ -88,11 +93,25 @@ function updateLayerPosition(target: HTMLElement) {
     }
   })
 }
-
+// 清除监听
+function clearObserver() {
+  if (mutationObserver) {
+    mutationObserver.disconnect()
+    mutationObserver = null
+  }
+  if (animationId) {
+    cancelAnimationFrame(animationId)
+    animationId = null
+  }
+  // 取消所有监听
+  removeListener()
+}
 // 监听鼠标移动事件（无防抖，实时响应）
 function updateHighlight(e: MouseEvent) {
-  if (!isEnabled())
+  if (!isEnabled()) {
     return
+  }
+  // console.log('test')
   // 如果属性是显示，不更新位置
 
   if (isVisible.value)
@@ -263,6 +282,13 @@ function onkeydownF1(e: KeyboardEvent) {
     message.value = isEnabled ? '已启用' : '已禁用'
     dialog.value = true
     closeDialog()
+    if (!isEnabled) {
+      clearObserver()
+    }
+    else {
+      // 重新启动
+      addListener()
+    }
   }
 }
 // 监听键盘按下事件
