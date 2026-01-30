@@ -176,10 +176,6 @@ function removeListener() {
   window.removeEventListener('scroll', handleViewportChange, { capture: true })
   window.removeEventListener('resize', handleViewportChange, { capture: true })
 }
-onMounted(async () => {
-  await nextTick() // 确保高亮层已挂载
-  addListener()
-})
 
 onUnmounted(() => {
   removeListener()
@@ -326,8 +322,6 @@ function keyupListener() {
   keyDown.clear()
 }
 onMounted(async () => {
-  window.addEventListener('keydown', keydownListener)
-  window.addEventListener('keyup', keyupListener)
   const config: string | null = await storage.getItem(local_CONFIG)
 
   if (config) {
@@ -342,6 +336,10 @@ onMounted(async () => {
       ...default_CONFIG,
     }
   }
+  await nextTick() // 确保高亮层已挂载
+  addListener()
+  window.addEventListener('keydown', keydownListener)
+  window.addEventListener('keyup', keyupListener)
   getMessage()
 })
 onBeforeUnmount(() => {
