@@ -1,10 +1,7 @@
 /**
  * 格式化后的原子样式项
  */
-interface FormattedResult {
-  label: string
-  value: string
-}
+import type { FormattedResult } from '@/types/type'
 
 class CssDeepInspector {
   // 静态缓存，所有实例共享，减少重复探测开销
@@ -97,13 +94,13 @@ class CssDeepInspector {
           const subVal = computed.getPropertyValue(sub)
           // 过滤掉无效值/空值（可选）
           if (subVal && subVal !== 'initial' && subVal !== 'none') {
-            result.push({ label: sub, value: subVal })
+            result.push({ label: sub, value: subVal, isContenteditable: false })
           }
         }
       }
       else if (val) {
         // 普通属性或能直接取到值的简写属性
-        result.push({ label: key, value: val })
+        result.push({ label: key, value: val, isContenteditable: false })
       }
     }
 

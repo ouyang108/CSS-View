@@ -9,7 +9,7 @@
             overflow-y: auto;
             overflow-x: hidden;
             font-size: 12px;
-             font-family: 'Arial', sans-serif;
+         
         }
 
         /* CSS 属性列表 */
@@ -42,7 +42,7 @@
         .css-prop-name {
             color: #666;
             font-family: 'Courier New', monospace;
-            font-size: 11px;
+            font-size: 16px;
            flex: 1 auto;
             margin-right: 8px;
             text-align: left;
@@ -53,7 +53,7 @@
         .css-prop-value {
             color: #333;
             font-family: 'Courier New', monospace;
-            font-size: 11px;
+            font-size: 16px;
             flex: 1 auto;
             text-align: right;
             white-space: wrap;
@@ -85,7 +85,7 @@
             padding: 4px 6px;
             border: 1px solid #e0e0e0;
             border-radius: 2px;
-            font-size: 11px;
+            font-size: 16px;
             width: 90%;
             outline: none;
             font-family: 'Courier New', monospace;
@@ -97,4 +97,16 @@
         .css-panel-search:focus {
             border-color: #409eff;
             box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+        .css-panel-reset {
+             width: 100%;
+            height: 36px;
+            margin-top: 0;
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }

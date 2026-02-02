@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { FormattedResult } from '@/types/type'
 import { flip, offset, shift, useFloating } from '@floating-ui/vue'
 import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
-import { onMessage, sendMessage } from 'webext-bridge/content-script'
 
+import { onMessage, sendMessage } from 'webext-bridge/content-script'
 import { default_CONFIG, local_CONFIG } from '@/constants'
 import { cssDeepInspector, setToPlus } from '@/utils/css'
 import { notify } from '@/utils/index'
@@ -23,7 +24,7 @@ const highlightLayerStyle = ref({
   cssProps: [] as string[],
   isEnabled: true,
 })
-const cssList = ref<{ label: string, value: string }[]>([])
+const cssList = ref<FormattedResult[]>([])
 // 上一个悬停的元素（避免重复处理同一元素）
 let lastTarget: HTMLElement | null = null
 // 缓存元素位置，避免重复计算
@@ -214,14 +215,14 @@ function getMessage() {
  * @param propNames - 可选，指定要获取的CSS属性名数组，不传则获取所有非默认属性
  * @returns 包含计算样式的对象数组
  */
-function getAllComputedStyles(propNames?: string[]): { label: string, value: string }[] {
+function getAllComputedStyles(propNames?: string[]): FormattedResult[] {
   // 如果是同一个元素，直接返回缓存的结果
 
   if (currentTarget === lastTargetCss)
     return cssList.value
   // 获取目标元素的计算样式
   const computedStyle = window.getComputedStyle(currentTarget!)
-  const result: { label: string, value: string }[] = []
+  const result: { label: string, value: string, isContenteditable: boolean }[] = []
 
   if (propNames && propNames.length > 0) {
     // console.log(cssDeepInspector.inspect(currentTarget!, propNames))
@@ -246,7 +247,7 @@ function getAllComputedStyles(propNames?: string[]): { label: string, value: str
 
       // 过滤默认值，且值不为空时创建单属性对象
       if (computedValue !== defaultValue && computedValue) {
-        result.push({ label: prop, value: computedValue })
+        result.push({ label: prop, value: computedValue, isContenteditable: false })
       }
     }
 
