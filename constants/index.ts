@@ -7,8 +7,6 @@ const default_CSS_PROPS = [
   'color',
   'background-color',
   'font-size',
-  'font-weight',
-  'font-style',
   'margin',
   'padding',
 ]
