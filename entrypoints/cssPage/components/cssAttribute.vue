@@ -3,12 +3,15 @@ import type { FormattedResult } from '@/types/type'
 
 import { debounce, notify } from '@/utils'
 
-defineProps({
+const props = defineProps({
   attribute: {
     type: String,
     default: '',
   },
-
+  target: {
+    type: Object as PropType<HTMLElement | null>,
+    default: () => null,
+  },
 })
 // 是否允许编辑
 
@@ -19,14 +22,7 @@ const cssList = defineModel<FormattedResult[]>({
   default: () => [],
 })
 const originalCssList = ref<FormattedResult[]>([])
-// 数据copy
-const copyData = computed(() => {
-  return cssList.value.map(item => ({
-    label: item.label,
-    value: item.value,
-    isContenteditable: false,
-  }))
-})
+
 watch(
   cssList,
   (newList) => {
@@ -36,15 +32,32 @@ watch(
     })
     originalCssList.value = newList.map(item => ({
       ...item, // 展开原有属性
+      // 快照
+      originValue: item.value,
+      // 标记是否被修改过
+      isDirty: false,
     }))
   },
   { immediate: true }, // 立即执行一次（等同于 onMounted 里的初始化）
 )
+// 修改样式
+function applyStyle(item: FormattedResult) {
+  if (!props.target)
+    return
+  // 设置内联样式，覆盖类样式
+  props.target.style.setProperty(item.label, item.value)
+}
 // 可编辑失去焦点时触发
 function handleBlur(e: FocusEvent, value: FormattedResult) {
   if (e.target instanceof HTMLElement) {
-    value.value = e.target.textContent || ''
+    const newValue = e.target.textContent || ''
+    if (newValue !== value.value) {
+      value.value = newValue
+      value.isDirty = newValue !== value.originValue
+      applyStyle(value)
+    }
   }
+
   value.isContenteditable = false
 }
 async function copyValue(value: FormattedResult) {
@@ -114,8 +127,29 @@ function handleCopyFormat(attribute: string, value: string) {
 }
 // 重置数据
 function resetData() {
-  originalCssList.value = [...copyData.value]
-  console.log(copyData.value, originalCssList.value)
+  if (!props.target)
+    return
+  // 1. 找出所有被动过的属性
+  const dirtyItems = originalCssList.value.filter(item => item.isDirty)
+
+  if (dirtyItems.length === 0)
+    return
+
+  // 2. 批量移除内联样式（只针对脏数据）
+  dirtyItems.forEach((item) => {
+    props.target!.style.removeProperty(item.label)
+  })
+
+  // 3. 性能优化：一次性读取计算后的样式
+  const computedStyle = window.getComputedStyle(props.target)
+
+  // 4. 同步状态
+  dirtyItems.forEach((item) => {
+    item.value = computedStyle.getPropertyValue(item.label).trim()
+    item.isDirty = false // 重置标记
+  })
+
+  notify('已恢复修改过的样式')
 }
 // 过滤属性列表
 const filterProps = debounce((e: InputEvent) => {

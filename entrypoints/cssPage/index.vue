@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormattedResult } from '@/types/type'
 import { flip, offset, shift, useFloating } from '@floating-ui/vue'
-import { nextTick, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, shallowRef, useTemplateRef } from 'vue'
 
 import { onMessage, sendMessage } from 'webext-bridge/content-script'
 import { default_CONFIG, local_CONFIG } from '@/constants'
@@ -37,6 +37,8 @@ let mutationObserver: MutationObserver | null = null
 let isUpdating = false
 // 当前target
 let currentTarget: HTMLElement | null = null
+// 记录当前的target shallref
+const currentTargetRef = shallowRef<HTMLElement | null>(null)
 // 记录上一次的target
 let lastTargetCss: HTMLElement | null = null
 // 是否处于显示状态
@@ -141,6 +143,7 @@ function updateHighlight(e: MouseEvent) {
   // 立即更新位置
   updateLayerPosition(target)
   currentTarget = target
+  currentTargetRef.value = target
   // 优化 MutationObserver：只监听必要的变化，降低性能消耗
   mutationObserver = new MutationObserver(() => {
     if (lastTarget) {
@@ -189,6 +192,7 @@ onUnmounted(() => {
 
   // 重置状态
   currentTarget = null
+  currentTargetRef.value = null
   lastTarget = null
   lastRect = null
   highlightLayerStyle.value.display = 'none'
@@ -379,7 +383,10 @@ watch(() => dialog.value, (newVal) => {
 
 <template>
   <div ref="highlightLayer" class="css-inspect" :style="highlightLayerStyle">
-    <CssAttribute v-if="isVisible" ref="cssAttributeRef" v-model="cssList" :style="floatingStyles" />
+    <CssAttribute
+      v-if="isVisible" ref="cssAttributeRef" v-model="cssList" :style="floatingStyles"
+      :target="currentTargetRef"
+    />
   </div>
 </template>
 
